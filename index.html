@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swordland Sign-up</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Arabic:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+body { margin: 0; }
+/* Layout: one narrow centered column, four large language buttons stacked, each with the language in its own script. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --fg: #14202e;
+  --muted: #55657a;
+  --line: #cdd5e0;
+  --accent: #1f4e8c;
+  --accent-fg: #ffffff;
+  --accent-hover: #173d6f;
+  --focus: #e0a100;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-ar: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1722; --surface: #172233; --fg: #e8eef6; --muted: #9db0c6; --line: #2a3a50;
+    --accent: #6fa8f0; --accent-fg: #0b1624; --accent-hover: #8cbaf5; --focus: #f2c14e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1722; --surface: #172233; --fg: #e8eef6; --muted: #9db0c6; --line: #2a3a50;
+  --accent: #6fa8f0; --accent-fg: #0b1624; --accent-hover: #8cbaf5; --focus: #f2c14e;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body);
+  padding-block: 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 440px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 10px; }
+h1 { font-family: var(--font-display); font-size: 2rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.prompt { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+.prompt span { display: block; }
+.prompt .ar { font-family: var(--font-ar); direction: rtl; }
+.langs { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.lang {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-height: 64px; padding: 14px 20px; border-radius: 10px; text-decoration: none;
+  background: var(--accent); color: var(--accent-fg);
+  font-weight: 700; font-size: 1.2rem;
+  transition: background-color .15s;
+}
+.lang:hover { background: var(--accent-hover); }
+.lang:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.lang .go { font-weight: 600; font-size: 0.85rem; opacity: .85; white-space: nowrap; }
+.lang.ar { font-family: var(--font-ar); direction: rtl; }
+.lang[aria-disabled="true"] {
+  background: var(--surface); color: var(--muted); border: 1px dashed var(--line); cursor: not-allowed; pointer-events: none;
+}
+footer { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+@media (prefers-reduced-motion: reduce) { .lang { transition: none; } }
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>Swordland</h1>
+    <p class="prompt">
+      <span>Choose your language to sign up.</span>
+      <span>Elige tu idioma para inscribirte.</span>
+      <span>Scegli la tua lingua per iscriverti.</span>
+      <span class="ar">اختار لغتك حتى تسجّل.</span>
+    </p>
+  </header>
+
+  <ul class="langs" id="langs"></ul>
+
+  <footer>All event times are UTC. · Todas las horas son UTC. · Tutti gli orari sono UTC. · كل الأوقات حسب UTC</footer>
+</main>
+
+<script>
+/* LEADERSHIP: paste the four form links between the quotes (Settings tab, rows 20 to 23 of the Swordland sheet). Nothing else needs to change. */
+const LINKS = {
+  en: '',
+  es: '',
+  it: '',
+  ar: ''
+};
+const LANGS = [
+  { code: 'en', name: 'English',  go: 'Open form', cls: '' },
+  { code: 'es', name: 'Español',  go: 'Abrir formulario', cls: '' },
+  { code: 'it', name: 'Italiano', go: 'Apri il modulo', cls: '' },
+  { code: 'ar', name: 'العربية (العراق)', go: 'افتح الاستمارة', cls: 'ar' }
+];
+const ul = document.getElementById('langs');
+LANGS.forEach(function (l) {
+  const li = document.createElement('li');
+  const a = document.createElement('a');
+  a.className = 'lang ' + l.cls;
+  const url = LINKS[l.code];
+  if (url) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
+  else { a.setAttribute('aria-disabled', 'true'); }
+  a.lang = l.code;
+  const n = document.createElement('span'); n.textContent = l.name;
+  const g = document.createElement('span'); g.className = 'go'; g.textContent = url ? l.go + ' →' : '…';
+  if (l.cls === 'ar') g.textContent = url ? '← ' + l.go : '…';
+  a.appendChild(n); a.appendChild(g);
+  li.appendChild(a); ul.appendChild(li);
+});
+</script>
+</body>
+</html>
