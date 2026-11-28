@@ -153,6 +153,13 @@ footer { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
 #view-plan #plan-extra { display: grid; gap: 12px; }
 .btn[aria-disabled="true"] small { opacity: .8; }
 #forms-note { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 0.9rem; line-height: 1.5; margin: 0; }
+#reg { display: grid; gap: 12px; }
+#reg h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+#reg .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+#reg .seg button { border: 0; background: none; color: var(--muted); font: inherit; font-weight: 600; font-size: 0.95rem; padding: 11px 8px; border-radius: 9px; cursor: pointer; min-height: 44px; }
+#reg .seg button[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); }
+#reg .seg button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+#reg .votes td.t { width: auto; }
 </style>
 </head>
 <body>
@@ -208,6 +215,14 @@ footer { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
     </ul>
     <p id="forms-note" hidden>The teams are ready, so the sign-up forms are closed. Open Swordland Plan to see your team and buildings.</p>
     <ul class="list" id="list-swordland"></ul>
+    <section id="reg" hidden>
+      <h2>Registered players</h2>
+      <div class="seg" role="tablist" id="reg-tabs" aria-label="Legion"></div>
+      <div class="votes">
+        <h3><span id="reg-title" style="color:inherit;font-weight:600"></span><span id="reg-count"></span></h3>
+        <table><tbody id="reg-body"></tbody></table>
+      </div>
+    </section>
     <footer>All event times are UTC. · Todas las horas son UTC. · Tutti gli orari sono UTC. · كل الأوقات حسب UTC</footer>
   </section>
 
@@ -272,25 +287,9 @@ footer { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
   <footer>Unofficial page of our alliances. Not affiliated with the game or its publisher.</footer>
 </main>
 
+<script src="config.js"></script>
 <script>
-/* LEADERSHIP: paste the form links between the quotes. Nothing else needs to change.
-   Swordland: Settings tab of the Swordland sheet, rows 20 to 23.
-   KvK: the link of the Troops form and the link of the Availability form. */
-const LINKS = {
-  kvk: {
-    troops: 'https://docs.google.com/forms/d/e/1FAIpQLSd2r5T1JmWS-FA1wN1goMqfKL_ayff55JFMNQdYvhLBpkBu5Q/viewform',
-    availability: 'https://docs.google.com/forms/d/e/1FAIpQLSf5bqIvntEfnZFxZBk1a_wPygvRoZ17BYEDQcFApm4uIbksnw/viewform'
-  },
-  swordland: {
-    en: 'https://docs.google.com/forms/d/e/1FAIpQLScmxyz0MxmaSAt6IbWzOA7ENtshiZSgz46ViKD8QaxVZFJcqg/viewform',
-    es: 'https://docs.google.com/forms/d/e/1FAIpQLSf9NEFrcNCD5l_Ybrw1MYdVxWn_dE7fKfHRCMjYWrHKVJMIsg/viewform',
-    it: 'https://docs.google.com/forms/d/e/1FAIpQLSeL9PzjaJ6EWoZ_mVxil4OuBwkLKGpRZCDFi2WXIIr0W-pjFg/viewform',
-    ar: 'https://docs.google.com/forms/d/e/1FAIpQLSdgKTSzdlHplCmQF79zcjsyO-Dctzsm--IKGFn6AjyFeLQKSQ/viewform'
-  }
-};
 
-/* LEADERSHIP: address of the Buffs Poll web app (Apps Script > Deploy > Web app, ends with /exec). */
-const POLL_URL = 'https://script.google.com/macros/s/AKfycbxQGJed6nIAgqz2Mt7TqPe1Yz7MC0kz3JnFFnH9EzXziCIKajDKR8i45RuN_2oj_75Bmw/exec';
 
 const ITEMS = {
   kvk: [
@@ -329,14 +328,13 @@ renderList('kvk');
 renderList('swordland');
 
 /* ---------------- Swordland Plan (teams published by leadership) ---------------- */
-/* LEADERSHIP: address of the Swordland web app (Swordland sheet > Apps Script > Deploy > Web app, ends with /exec). */
-const TEAMS_URL = 'https://script.google.com/macros/s/AKfycbxQGJed6nIAgqz2Mt7TqPe1Yz7MC0kz3JnFFnH9EzXziCIKajDKR8i45RuN_2oj_75Bmw/exec';
 
 let teams = null;          // published data, or null when leadership has not published
 let teamsJson = '';        // last answer, to redraw only when something changed
 let teamsChecked = null;
 let teamsTimer = null;
 let legionIdx = 0, planView = null, query = '';
+let registered = null, regIdx = 0;
 const TOP = ['Swordshrine', 'Hall of Reformation', 'Mercenary Camp'];
 
 function norm(s) { return String(s).toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); }
@@ -465,6 +463,30 @@ function renderPlan() {
   mk('subs', 'Substitutes (' + lg.subs.length + ')', lg.subs);
 }
 
+/* Registered players (shown while the forms are open): one tab per legion, numbered in order of registration. */
+function renderReg() {
+  const box = document.getElementById('reg');
+  const list = registered && registered.legions ? registered.legions : [];
+  box.hidden = !!teams || !list.length;
+  if (box.hidden) return;
+  if (regIdx >= list.length) regIdx = 0;
+  const tabs = document.getElementById('reg-tabs'); tabs.textContent = '';
+  list.forEach(function (lg, i) {
+    const b = el('button', '', lg.name + (lg.type ? ' · ' + lg.type : '')); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(i === regIdx));
+    b.addEventListener('click', function () { regIdx = i; renderReg(); }); tabs.appendChild(b);
+  });
+  const lg = list[regIdx];
+  document.getElementById('reg-title').textContent = lg.hour || lg.name;
+  document.getElementById('reg-count').textContent = lg.names.length + ' registered';
+  const body = document.getElementById('reg-body'); body.textContent = '';
+  if (!lg.names.length) {
+    const tr = el('tr'); const td = el('td', 'empty', 'Nobody has registered for this legion yet.'); td.colSpan = 2; tr.appendChild(td); body.appendChild(tr); return;
+  }
+  lg.names.forEach(function (n, i) {
+    const tr = el('tr'); tr.appendChild(el('td', 'n', String(i + 1))); tr.appendChild(el('td', '', n)); body.appendChild(tr);
+  });
+}
+
 /* Swordland screen: forms open until leadership publishes the teams, then the plan opens and the forms close. */
 function applyForms() {
   const published = !!teams;
@@ -492,15 +514,16 @@ function loadTeams() {
       const changed = j !== teamsJson;
       teamsJson = j;
       teams = res.published ? res.data : null;
+      registered = res.registered || null;
       applyForms();
-      if (changed) { renderMe(); renderPlan(); }
+      if (changed) { renderMe(); renderPlan(); renderReg(); }
       renderStamp();
     }).catch(function () { /* keep what is shown */ });
 }
 function startTeams() { loadTeams(); if (!teamsTimer) teamsTimer = setInterval(function () { if (!document.hidden) loadTeams(); }, 60000); }
 function stopTeams() { if (teamsTimer) { clearInterval(teamsTimer); teamsTimer = null; } }
 document.getElementById('plan-q').addEventListener('input', function (e) { query = e.target.value; renderMe(); });
-applyForms(); renderPlan();
+applyForms(); renderPlan(); renderReg();
 
 /* ---------------- Buffs Poll ---------------- */
 const ERRORS = {
