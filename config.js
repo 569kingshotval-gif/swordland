@@ -17,7 +17,7 @@ const LINKS = {
 };
 
 /* LEADERSHIP: address of the Buffs Poll web app (Apps Script > Deploy > Web app, ends with /exec). */
-const POLL_URL = 'https://script.google.com/macros/s/AKfycbwpT3BmI4UaDMl1wruQSlEeXuBAyxQnAYk9G81HMI2CHu3e2sn1o7m75nQ3_zXmuln0/exec;
+const POLL_URL = 'https://script.google.com/macros/s/AKfycbwpT3BmI4UaDMl1wruQSlEeXuBAyxQnAYk9G81HMI2CHu3e2sn1o7m75nQ3_zXmuln0/exec';
 
 /* LEADERSHIP: address of the Swordland web app (Swordland sheet > Apps Script > Deploy > Web app, ends with /exec). */
 const TEAMS_URL = 'https://script.google.com/macros/s/AKfycbzvlocTMiz3xZk404rmSnEWsW7EFqCcL39FZGqixSh3csegA8jw7acDak17d2V8gbA/exec';
